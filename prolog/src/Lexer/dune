@@ -1,0 +1,6 @@
+(library 
+ (name lexer)
+ (libraries menhirParser errors))
+
+(ocamllex
+ (modules lexer))

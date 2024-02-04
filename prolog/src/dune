@@ -1,0 +1,4 @@
+(executable
+ (public_name prolog)
+ (name prolog)
+ (libraries parser lexer interpreter printer errors ast linenoise backtrackStateMonad))
