@@ -6,17 +6,19 @@ module State = struct
   include Stack
 
   type state = {
-      program       : clause list;
-      variables : (variable * term option) list; 
-      clauses       : clause list;
-      goals         : term list;
+      program            : clause list;
+      variables          : (variable * term option) list;
+      clauses            : clause list;
+      goals              : term list;
+      temp_substitutions : (variable * term option) list;
     }
 
-  let _make_state p v c g = {
-      program       = p;
-      variables     = v;
-      clauses       = c;
-      goals         = g;
+  let _make_state p v c g t = {
+      program            = p;
+      variables          = v;
+      clauses            = c;
+      goals              = g;
+      temp_substitutions = t;
     }
   
 
@@ -27,6 +29,8 @@ module State = struct
     print_terms (s.goals);
     print_endline "\nProdukcje";
     print_results (s.variables);
+    print_endline "\nSubstytucje";
+    print_results (s.temp_substitutions);
     print_endline "\n";
     ()
   
@@ -41,16 +45,15 @@ module State = struct
         _print_state s;
         _print_stack map_acc map
 
-  let _temp_substitutions : ((variable * term option) list ref) = ref []
 
   (*        State getters       *)
   let _get_program map = 
     let (state, _) = Stack.get () map in
     state.program
 
-  let _get_goals map =
+  let get_goals () map =
     let state, _ = Stack.get () map in
-    state.goals
+    (state.goals, map)
 
   let get_clauses () map =
     let (state, _) = Stack.get () map in
@@ -61,16 +64,43 @@ module State = struct
     state.variables
 
   let get_substitutions () map =
+    (*print_endline "NOWE";
+    _print_stack map map;*)
     let variables = _get_variables map in
     let substitutions = List.filter (fun (_, term) -> term <> None) variables
     in
     (substitutions, map)
 
+  let _get_temp_substitutions map =
+    let (state, _) = Stack.get () map in
+    state.temp_substitutions
+
+  (*      temp substitutions    *)
+
+  let _push_temp_substitution sub map =
+    let new_state = _make_state (_get_program map)
+                                (_get_variables map)
+                                (fst (get_clauses () map))
+                                (fst (get_goals () map))
+                                (sub :: (_get_temp_substitutions map))
+    in
+    Stack._update new_state map
+
+
+  let _clear_temp_substitutions () map =
+    let new_state = _make_state (_get_program map)
+                                (_get_variables map)
+                                (fst (get_clauses () map))
+                                (fst (get_goals () map))
+                                []
+    in
+    Stack._update new_state map
+
 
   (*        substitutions       *)
 
   let _all_substitutions map = 
-    fst (get_substitutions () map) @ !_temp_substitutions 
+    fst (get_substitutions () map) @ (_get_temp_substitutions map)
 
   let _find_substitution variable substitutions =
    List.assoc_opt variable substitutions
@@ -86,10 +116,11 @@ module State = struct
 
   let set_substitutions () map =
     let variables = _get_variables map in
+    let temp_subs = _get_temp_substitutions map in
     let apply_substitution (var, sub) =
       match sub with
       | None -> (
-          match _find_substitution var !_temp_substitutions  with
+          match _find_substitution var temp_subs with
           | Some new_sub -> (var, new_sub)
           | None -> (var, sub)
       )
@@ -99,20 +130,21 @@ module State = struct
     let new_state = _make_state (_get_program map)
                                 new_variables
                                 (fst (get_clauses () map))
-                                (_get_goals map) in
+                                (fst (get_goals () map))
+                                temp_subs in
     Stack.push new_state map
   
 
   let push_substitution pair map =
     if _has_substitution pair (_all_substitutions map) then (
-      _temp_substitutions := [];
-      (false, map) 
+      let (_, new_map) = _clear_temp_substitutions () map in
+      (false, new_map) 
       )
     else if _has_variable (fst pair) (_all_substitutions map) then 
       (true, map)
     else begin
-      _temp_substitutions := pair :: !_temp_substitutions;
-      (true, map)
+      let (_, new_map) = _push_temp_substitution pair map in
+      (true, new_map)
     end
 
     
@@ -120,24 +152,24 @@ module State = struct
   let rec _update_goals_variables goals map =
     let update_goal g =
       match g with
-      | Var (name, x) when !x = None ->(
+      | Var (name, x) when x = None ->(
         match _find_substitution name (_all_substitutions map) with
-        | Some new_sub -> x := new_sub;
-        | None -> ()
+        | Some new_sub -> Var (name, new_sub)
+        | None -> g
         )
-      | Sym (_, ts) -> _update_goals_variables ts map
-      | _ -> ()
+      | Sym (name, ts) -> Sym (name, _update_goals_variables ts map)
+      | _ -> g
     in
-    List.iter update_goal goals
+    List.map update_goal goals
 
 
   let set_goals goals map = 
-    _update_goals_variables goals map; 
-    _temp_substitutions := [];
+    let new_goals = _update_goals_variables goals map in 
     let new_state = _make_state (_get_program map)
                                 (_get_variables map)
                                 (fst (get_clauses () map))
-                                goals                          
+                                new_goals  
+                                []                        
     in
     Stack._update new_state map
 
@@ -147,7 +179,8 @@ module State = struct
     let new_state = _make_state (_get_program map)
                                 (_get_variables map)
                                 cs
-                                (_get_goals map)
+                                (fst (get_goals () map))
+                                (_get_temp_substitutions map)
     in
     Stack._update new_state map
 
@@ -155,7 +188,8 @@ module State = struct
     let new_state = _make_state (_get_program map)
                                 (_get_variables map)
                                 (_get_program map)
-                                (_get_goals map)
+                                (fst (get_goals () map))
+                                (_get_temp_substitutions map)
     in
     Stack._update new_state map
 

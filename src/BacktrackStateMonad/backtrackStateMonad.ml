@@ -2,7 +2,6 @@
 open BacktrackStateMonadSig
 open State
 
-
 module BacktrackStateMonad : BacktrackStateMonadSig = struct
   include State
   include Stack
@@ -17,17 +16,16 @@ module BacktrackStateMonad : BacktrackStateMonadSig = struct
     if (empty)
       then ([], map)
       else
-        let prev_goals = State._get_goals map in
-        _temp_substitutions := [];
+        let (prev_goals, map) = get_goals () map in
+        let (_, map) = _clear_temp_substitutions () map in
         (prev_goals, map)
     
 
   let initialize program variables _ =
-    let new_state = State._make_state program variables program [] in
+    let new_state = State._make_state program variables program [] [] in
     Stack._initialize_stack new_state
 
 
-    
   (*      Monads operators      *)
     let return x map = (x, map)
     

@@ -45,6 +45,7 @@ let rec evaluate_arithmetic_expr expr =
   | Sym ("-", [lhs; rhs]) -> (evaluate_arithmetic_expr lhs) - (evaluate_arithmetic_expr rhs)
   | Sym ("*", [lhs; rhs]) -> (evaluate_arithmetic_expr lhs) * (evaluate_arithmetic_expr rhs)
   | Sym ("/", [lhs; rhs]) -> (evaluate_arithmetic_expr lhs) / (evaluate_arithmetic_expr rhs)
+  | Sym ("-", [hs])       -> -(evaluate_arithmetic_expr hs)
   | Num n -> n
   | _ -> raise (Errors.Runtime_error "Invalid arithmetic expression")
 
@@ -81,10 +82,10 @@ let rec renameVariables goals t =
   in
   match t with
   | Var(name, x) ->  
-    (match !x with
+    (match x with
     | None     -> 
-      Var((fresh_variable_name name), ref None)
-      | Some y   -> Var(name, ref (Some (renameVariables goals y)))
+      Var((fresh_variable_name name), None)
+      | Some y   -> Var(name, Some (renameVariables goals y))
     )
   | Sym(f, ts) -> Sym(f, (List.map (renameVariables  goals) ts ))
   | Num x -> Num x
@@ -113,6 +114,7 @@ let select_clause () =
 
 let rec solve goals =
   let* _ = set_goals goals in
+  let* goals = get_goals () in
   match goals with
   | []      -> return true
   | g :: gs -> (
@@ -132,15 +134,15 @@ let rec solve goals =
     | _ ->
       let* clause = select_clause () in
       match clause with
-      | Some c -> 
+      | Some c ->
         let (h, b) = refresh_clause c goals in
         let* is_unified = unify h g in
         if is_unified then
             let* () = set_substitutions () in
             let* () = restore_clauses () in
             solve (b @ gs)
-            else
-            solve goals
+            else (
+              solve goals)
       | None ->
         let* new_goals = backtrack_goals () in
         match new_goals with

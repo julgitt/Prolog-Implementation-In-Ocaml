@@ -15,6 +15,7 @@ module type BacktrackStateMonadSig = sig
 
   (* State getters/setters *)
   val set_goals   : term list -> unit t
+  val get_goals   : unit -> term list t
 
   val set_clauses   : clause list -> unit t
   val get_clauses   : unit -> clause list t

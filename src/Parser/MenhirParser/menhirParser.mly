@@ -67,7 +67,7 @@ term_neg
 
 term_simple
 : PARENTH_OPN term PARENTH_CLS { ($2) }
-| VAR                { Var ($1, ref None) }
+| VAR                { Var ($1, None) }
 | symbol             { Sym ($1, []) }
 | NUM                { (Num  $1) }
 | symbol PARENTH_OPN term_list PARENTH_CLS { Sym($1, $3) }

@@ -4,7 +4,7 @@ open Printf
 let rec view t =
   match t with
   | Var (_, x) ->
-    (match !x with
+    (match x with
     | None   -> t
     | Some t -> view t)
   | _ -> t

@@ -1,7 +1,7 @@
 type symbol = string
 type variable = string
 
-type var = term option ref
+type var = term option
 and term =
   | Var of variable * var
   | Sym of symbol * term list
