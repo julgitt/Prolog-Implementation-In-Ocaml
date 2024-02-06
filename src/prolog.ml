@@ -34,7 +34,6 @@ let rec add_origin_variables terms =
 
 
 (*    Query Execution   *)
-
 let rec search_for_more_solutions () =
   let* new_goals = backtrack_goals () in
   let* (_, solutions) = evaluate new_goals in

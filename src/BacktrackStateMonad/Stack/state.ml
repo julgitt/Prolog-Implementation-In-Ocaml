@@ -64,8 +64,6 @@ module State = struct
     state.variables
 
   let get_substitutions () map =
-    (*print_endline "NOWE";
-    _print_stack map map;*)
     let variables = _get_variables map in
     let substitutions = List.filter (fun (_, term) -> term <> None) variables
     in
