@@ -1,4 +1,4 @@
-# Prolog implementation in Ocaml 
+# Simple Prolog implementation in Ocaml 
 
 **Key Features:**
 - Unification using Robinson's algorithm.
@@ -7,6 +7,14 @@
 - Implementation of backtracking with a state monad providing searching for multiple solutions.
 
 **Additional libraries:** Dune, Menhir, Linenoise
+
+**Installation:**
+
+You need to have dune installed.
+
+    dune build
+
+    dune exec prolog
 
 **Plans for the future development:**
 - support for Prolog lists
