@@ -9,7 +9,8 @@ let rec solve goals =
    let* goals = apply_substitutions goals in
    let* _ = set_goals goals in
    match goals with
-   | [] -> return true
+   | [] -> let* solutions = get_substitutions () in
+      return (true, solutions)
    | goal :: rest_goals ->
        match goal with
       | Sym ("is", _) -> handle_arithmetic_goal goal rest_goals
@@ -18,7 +19,7 @@ let rec solve goals =
 and backtrack () = 
    let* new_goals = backtrack_goals () in
    match new_goals with
-   | [] -> return false
+   | [] -> return (false, [])
    | _ -> solve new_goals
 
 and handle_arithmetic_goal goal rest_goals =
@@ -41,9 +42,3 @@ and handle_non_arithmetic_goal goal rest_goals goals =
          solve (body @ rest_goals)
       else solve goals
    | None -> backtrack ()
-    
-
-let evaluate queries =
-  let* is_solved = solve queries in
-  let* solution = get_substitutions () in
-  return (is_solved, solution)

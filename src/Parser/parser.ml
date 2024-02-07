@@ -1,6 +1,6 @@
 type fname = string
 
-let run_parser parse (lexbuf : Lexing.lexbuf) =
+let _run_parser parse (lexbuf : Lexing.lexbuf) =
    try parse Lexer.token lexbuf with
    | _ -> raise (Errors.Parse_error(Lexing.lexeme_start_p lexbuf,
                               UnexpectedToken (Lexing.lexeme lexbuf)))
@@ -14,7 +14,7 @@ let parse_file fname =
          { lexbuf.lex_curr_p with
             pos_fname = fname
          };
-         run_parser MenhirParser.program lexbuf
+         _run_parser MenhirParser.program lexbuf
       with
       | result ->
          close_in chan;
@@ -28,8 +28,8 @@ let parse_file fname =
 
 let parse_query chan =
   let lexbuf = Lexing.from_channel chan in
-  run_parser MenhirParser.query lexbuf
+  _run_parser MenhirParser.query lexbuf
 
 let parse_query_string str =
   let lexbuf = Lexing.from_string str in
-  run_parser MenhirParser.query lexbuf
+  _run_parser MenhirParser.query lexbuf

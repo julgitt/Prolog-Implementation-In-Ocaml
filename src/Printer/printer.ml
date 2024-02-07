@@ -1,19 +1,10 @@
 open Ast
 open Printf
 
-let rec view t =
-   match t with
-   | Var (_, x) -> ( 
-      match x with
-      | None -> t
-      | Some t -> view t
-      )
-   | _ -> t
-
-let print_var s =
+let _print_var s =
    printf "\x1b[38;5;173m%s\x1b[0m" s
 
-let print_symbol s =
+let _print_symbol s =
    printf "\x1b[38;5;221m%s\x1b[0m" s
 
 let print_error error =
@@ -25,15 +16,24 @@ let print_true () =
 let print_false () = 
    print_endline "\x1b[38;5;196mfalse\x1b[0m.\n"
 
+let rec view t =
+   match t with
+   | Var (_, x) -> ( 
+      match x with
+      | None -> t
+      | Some t -> view t
+      )
+   | _ -> t
+
 let rec print_terms q =
    match q with
    | [] -> ()
    | [t] -> (
       match view t with
-      | Var(name, _) -> print_var name
-      | Sym(name, []) -> print_symbol name
+      | Var(name, _) -> _print_var name
+      | Sym(name, []) -> _print_symbol name
       | Sym(name, xs) -> 
-         print_symbol name;
+         _print_symbol name;
          printf "(";
          print_terms xs;
          printf ")"

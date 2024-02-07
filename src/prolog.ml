@@ -33,7 +33,7 @@ let rec add_origin_variables terms =
 (*    Query Execution   *)
 let rec search_for_more_solutions () =
   let* new_goals = backtrack_goals () in
-  let* (_, solutions) = I.evaluate new_goals in
+  let* (_, solutions) = I.solve new_goals in
   match solutions with
   | [] -> return (P.print_false ())
   | _ ->
@@ -57,7 +57,7 @@ and wait_for_user_input () =
 let run_query ts =
    run () (
       let* _ = initialize (!program) (!origin_variables) in
-      let* (is_solved, solutions) = I.evaluate ts in
+      let* (is_solved, solutions) = I.solve ts in
       all_solutions := solutions :: !all_solutions;
       print_endline "";
       match solutions with
