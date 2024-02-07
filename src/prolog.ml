@@ -1,80 +1,73 @@
 open Parser
-open Ast
-open Interpreter
 open BacktrackStateMonad.BSM
-open Printer
+module P = Printer
+module I = Interpreter
 
-
-let program : clause list ref = ref []
-let origin_variables : ((variable * term option) list ref) = ref []
-let all_solutions : ((variable * term option) list) list ref = ref []
+let program : Ast.program ref = ref []
+let origin_variables : ((Ast.variable * Ast.substitution) list ref) = ref []
+let all_solutions : ((Ast.variable * Ast.substitution) list) list ref = ref []
 
 let is_solution_duplicate solution =
-  List.exists (fun sol -> sol = solution) !all_solutions
-
+   List.exists (fun sol -> sol = solution) !all_solutions
 
 let rec add_origin_variables terms =
-  let is_variable_present name =
-    List.exists (fun (n, _) -> n = name) !origin_variables
-  in
-  let add_variable name =
-    if not (is_variable_present name) then
-      origin_variables := (name, None) :: !origin_variables
-  in
-  match terms with
-  | [] -> ()
-  | Var (name, _) :: ts ->
-    add_variable name;
-    add_origin_variables ts
-  | Sym (_, ts) :: ts2 ->
-    add_origin_variables ts;
-    add_origin_variables ts2
-  | Num _ :: ts -> 
-    add_origin_variables ts
+   let is_variable_present name =
+      List.exists (fun (n, _) -> n = name) !origin_variables
+   in
+   let add_variable name =
+      if not (is_variable_present name) then
+         origin_variables := (name, None) :: !origin_variables
+   in
+   match terms with
+   | [] -> ()
+   | Ast.Var (name, _) :: ts ->
+      add_variable name;
+      add_origin_variables ts
+   | Ast.Sym (_, ts) :: ts2 ->
+      add_origin_variables ts;
+      add_origin_variables ts2
+   | Ast.Num _ :: ts -> 
+      add_origin_variables ts
 
 
 (*    Query Execution   *)
 let rec search_for_more_solutions () =
   let* new_goals = backtrack_goals () in
-  let* (_, solutions) = evaluate new_goals in
+  let* (_, solutions) = I.evaluate new_goals in
   match solutions with
-  | [] ->
-    return (print_false ())
+  | [] -> return (P.print_false ())
   | _ ->
-    if not (is_solution_duplicate solutions) then (
+   if not (is_solution_duplicate solutions) then (
       all_solutions := solutions :: !all_solutions;
-      print_results solutions;
+      P.print_results solutions;
       wait_for_user_input ()
-    ) else
-      search_for_more_solutions ()
+   ) else search_for_more_solutions ()
 
 and wait_for_user_input () =
-  let* input = return (read_line ()) in
-  match input with
-  | ";" ->
-    print_endline "";
-    search_for_more_solutions ()
-  | "." ->
-    return (print_endline "")
-  | _ ->
-    raise (Errors.Runtime_error "Invalid expression - '.' or ';' expected")
-
+   let* input = return (read_line ()) in
+   match input with
+   | ";" ->
+      print_endline "";
+      search_for_more_solutions ()
+   | "." ->
+      return (print_endline "")
+   | _ ->
+      raise (Errors.Runtime_error "Invalid expression - '.' or ';' expected")
 
 let run_query ts =
-  run () (
-    let* _ = initialize (!program) (!origin_variables) in
-    let* (is_solved, solutions) = evaluate ts in
-    all_solutions := solutions :: !all_solutions;
-    print_endline "";
-    (match solutions with
-      | [] -> if is_solved 
-          then return (print_true ())
-          else return (print_false ())
-      | _ ->
-        print_results solutions;
-        wait_for_user_input () 
-    )
-  )
+   run () (
+      let* _ = initialize (!program) (!origin_variables) in
+      let* (is_solved, solutions) = I.evaluate ts in
+      all_solutions := solutions :: !all_solutions;
+      print_endline "";
+      match solutions with
+         | [] -> if is_solved 
+            then return (P.print_true ())
+            else return (P.print_false ())
+         | _ ->
+         P.print_results solutions;
+         wait_for_user_input () 
+   )
   
 
 (*  Console initialization   *)
@@ -87,49 +80,51 @@ let print_welcome_message () =
 
 
 let init_console () =
-  LNoise.history_load ~filename:".commands_history" |> ignore;
-  LNoise.history_set ~max_length:100 |> ignore;
-  print_welcome_message ()
+   LNoise.history_load ~filename:".commands_history" |> ignore;
+   LNoise.history_set ~max_length:100 |> ignore;
+   print_welcome_message ()
 
 
 (*    User input handling   *)
 let add_input_to_history input =
-  LNoise.history_add input |> ignore;
-  LNoise.history_save ~filename:".commands_history" |> ignore
+   LNoise.history_add input |> ignore;
+   LNoise.history_save ~filename:".commands_history" |> ignore
 
 
 let handle_single_input input =
-  try
-    add_input_to_history input;
-    let query = parse_query_string input in
-    match query with
-    | Filepath f ->
-      program := parse_file f;
-      print_clauses !program;
+   try
+      add_input_to_history input;
+      let query = parse_query_string input in
+      match query with
+      | Filepath f ->
+         program := parse_file f;
+         P.print_clauses !program;
+         print_endline ""
+      | Query ts ->
+         origin_variables := [];
+         all_solutions := [];
+         add_origin_variables ts;
+         run_query ts
+   with error -> 
+      P.print_error error;
       print_endline ""
-    | Query ts ->
-      origin_variables := [];
-      add_origin_variables ts;
-      run_query ts
-  with error -> print_error error
 
 
 let user_input_loop prompt action =
-  let rec loop () =
-    match LNoise.linenoise prompt with
-    | None -> ()
-    | Some input ->
-      action input;
-      loop ()
-  in
-  loop ()
+   let rec loop () =
+      match LNoise.linenoise prompt with
+      | None -> ()
+      | Some input ->
+         action input;
+         loop ()
+   in
+   loop ()
 
 
 (*    Main    *)
 let main_loop () =
-  user_input_loop "?- " handle_single_input
-
+   user_input_loop "?- " handle_single_input
 
 let _ =
-  init_console ();
-  main_loop ()
+   init_console ();
+   main_loop ()
