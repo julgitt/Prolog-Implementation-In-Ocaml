@@ -10,7 +10,7 @@
 
 **Installation:**
 
-You need to have dune installed.
+First, you need to install dune.
 
     dune build
 
