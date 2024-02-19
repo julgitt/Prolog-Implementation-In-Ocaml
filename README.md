@@ -13,11 +13,17 @@
 - Menhir
 - Linenoise
 ---
-**Installation:**
-    
-    dune build
-
-    dune exec prolog
+**Manual Installation:**
+```console
+sudo apt install opam
+opam init
+opam install dune
+opam install linenoise
+opam install menhir
+eval $(opam config env)
+dune build    
+dune exec prolog
+```
 ---
 **Plans for the future development:**
 - Support for Prolog lists
