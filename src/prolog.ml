@@ -72,10 +72,14 @@ let run_query ts =
 
 (*  Console initialization   *)
 let print_welcome_message () =
-  ["\n\x1b[38;5;199m" ^ "PROLOG" ^ "\x1b[0m\n";
-   "Type <filepath> to load a program from a file";
-   "or type a query.";
-   "Press ctrl+d to exit.\n"]
+  ["\n💗 💗 💗 💗 💗 💗 💗 💗 💗 💗 💗 💗 💗 💗 💗 💗\n";
+   Printer.sub_color "(づ◡﹏◡)づ  " ^ Printer.main_color "WELCOME TO PROLOG!" ^ Printer.sub_color " ˖⁺‧₊˚✧☽✧˚₊‧⁺˖\n";
+   "Type" ^ Printer.sub2_color " <filepath>" ^ " to load a program from a file";
+   "or type a query to execute.";
+   "Press " ^ Printer.sub2_color "ctrl+d" ^ " to quit\n";
+   "Remember to put on your knee socks.";
+   "Happy coding!!!\n";
+   Printer.sub_color "◝(ᵔᵕᵔ)◜ \n"]
   |> List.iter print_endline
 
 

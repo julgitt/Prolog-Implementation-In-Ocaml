@@ -1,3 +1,9 @@
+val main_color : string -> string
+
+val sub_color : string -> string
+
+val sub2_color : string -> string
+
 val print_error : exn -> unit
 
 val print_true : unit -> unit
