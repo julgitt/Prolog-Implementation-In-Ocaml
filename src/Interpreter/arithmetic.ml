@@ -8,7 +8,9 @@ let rec _evaluate_expr expr =
    | Ast.Sym ("+", [l; r]) -> (_evaluate_expr l) + (_evaluate_expr r)
    | Ast.Sym ("-", [l; r]) -> (_evaluate_expr l) - (_evaluate_expr r)
    | Ast.Sym ("*", [l; r]) -> (_evaluate_expr l) * (_evaluate_expr r)
-   | Ast.Sym ("/", [l; r]) -> (_evaluate_expr l) / (_evaluate_expr r)
+   | Ast.Sym ("/", [l; r]) -> let divider = (_evaluate_expr r) in
+      if divider = 0 then raise (Errors.Runtime_error "Division by 0");
+      (_evaluate_expr l) / divider
    | Ast.Sym ("-", [x]) -> -(_evaluate_expr x)
    | Ast.Num n -> n
    | _ -> raise (Errors.Runtime_error "Invalid arithmetic expression")
