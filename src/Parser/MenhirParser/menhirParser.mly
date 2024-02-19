@@ -31,13 +31,18 @@ is_sym
 
 add_sym
 : PLUS  { "+" }
-| MINUS { "-" }
+;
+
+sub_sym
+: MINUS { "-" }
 ;
 
 mult_sym
 : ASTERISK { "*" }
-| SLASH    { "/" }
 ;
+
+div_sym
+: SLASH    { "/" }
 
 
 /* ========================================================================= */
@@ -48,17 +53,36 @@ term
 ;
 
 term_add
-: term_mult add_sym term_add { Sym($2, [ $1; $3 ]) }
+: term_primary add_sym term_add   { Sym($2, [ $1; $3 ]) }
+| term_subtract add_sym term_add  { Sym($2, [ $1; $3 ]) }
+| term_subtract { $1 }
+| term_primary  { $1 }
+;
+
+term_subtract
+: term_primary sub_sym term_primary  { Sym($2, [ $1; $3 ]) }
+| term_subtract sub_sym term_primary { Sym($2, [ $1; $3 ]) }
+;
+
+term_primary
+: term_div { $1 }
+| term_neg { $1 }
+;
+
+term_div
+: term_neg div_sym term_neg { Sym($2, [ $1; $3 ]) }
+| term_div div_sym term_neg { Sym($2, [ $1; $3 ]) }
+| term_div mult_sym term_neg { Sym($2, [ $1; $3 ]) }
 | term_mult { $1 }
 ;
 
 term_mult
-: term_neg mult_sym term_mult { Sym($2, [ $1; $3 ]) }
-| term_neg { $1 }
+: term_neg mult_sym term_neg  { Sym($2, [ $1; $3 ]) }
+| term_mult mult_sym term_neg { Sym($2, [ $1; $3 ]) }
 ;
 
 term_neg
-: add_sym term_neg { Sym($1, [ $2 ]) }
+: sub_sym term_neg { Sym($1, [ $2 ]) }
 | term_simple { $1 }
 ;
 
