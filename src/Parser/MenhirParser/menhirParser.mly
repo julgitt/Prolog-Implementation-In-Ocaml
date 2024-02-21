@@ -1,7 +1,8 @@
 %token<string> VAR SYM
 %token <string> FILEPATH
 %token<int> NUM
-%token BR_OPN BR_CLS PARENTH_OPN PARENTH_CLS
+%token BR_OPN BR_CLS PARENTH_OPN PARENTH_CLS 
+%token SQR_BR_OPN SQR_BR_CLS BAR
 %token COMMA DOT RULE
 %token PLUS MINUS ASTERISK SLASH IS
 %token EOF
@@ -15,6 +16,16 @@
 %{
 
 open Ast
+
+let desugar_list term_list =
+    let desugar_elem term acc = 
+        match term with
+        | Var (_, _) -> term
+        | _ -> Sym ("cons", [term; acc])
+    in
+    List.fold_right desugar_elem term_list (Sym ("nil", []))
+
+let desugar_cons car cdr = Sym ("cons", [car; desugar_list cdr])
 
 %}
 
@@ -95,6 +106,7 @@ term_simple
 | symbol             { Sym ($1, []) }
 | NUM                { (Num  $1) }
 | symbol PARENTH_OPN term_list PARENTH_CLS { Sym($1, $3) }
+| prolog_list        { $1 }
 ;
 
 /* ========================================================================= */
@@ -105,6 +117,12 @@ term_list
 ;
 
 /* ========================================================================= */
+
+prolog_list
+: SQR_BR_OPN SQR_BR_CLS    { Sym("nil", []) }
+| SQR_BR_OPN term_list SQR_BR_CLS    { desugar_list $2 }
+| SQR_BR_OPN head = term BAR tail = term_list SQR_BR_CLS    { desugar_cons head tail }  
+;
 
 clause
 : term DOT                { Fact $1      }

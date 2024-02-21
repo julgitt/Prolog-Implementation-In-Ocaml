@@ -43,6 +43,9 @@ rule token = parse
   | '%'   { skip_line lexbuf;       token lexbuf }
   | '('                      { MenhirParser.PARENTH_OPN }
   | ')'                      { MenhirParser.PARENTH_CLS }
+  | '['                      { MenhirParser.SQR_BR_OPN }
+  | ']'                      { MenhirParser.SQR_BR_CLS }
+  | '|'                      { MenhirParser.BAR }
   | '<'                      { MenhirParser.BR_OPN }
   | '>'                      { MenhirParser.BR_CLS }
   | sym_char+           as x { tokenize_sym x      }
