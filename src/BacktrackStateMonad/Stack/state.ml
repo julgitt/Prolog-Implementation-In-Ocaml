@@ -119,17 +119,37 @@ module State = struct
 
    let push_substitution (var, sub) map =
       let all_subs = _get_all_substitutions map in
-      if _has_different_substitution (var, sub) all_subs then (
+      let s = _find_substitution var all_subs in
+      match sub, s with
+      | Some (Ast.Var (name, _)), Some current_sub -> 
+         let (_, new_map) = _push_temp_substitution (name, current_sub) map in
+         (true, new_map)
+      | _, Some current_sub when current_sub = sub -> (true, map)
+      | _, Some _ -> 
          let (_, new_map) = _clear_temp_substitutions () map in
-         (false, new_map) 
-      ) else if _contains_variable var all_subs then 
-         (true, map)
-      else (
+         (false, new_map)
+      | _, None ->  
          let (_, new_map) = _push_temp_substitution (var, sub) map in
          (true, new_map)
-      )
     
    (*      Goals       *)
+
+   let _update_variables map = 
+      let subs = _get_variables map in
+      let rec update_sub sub =
+         match sub with
+         | Ast.Var (name, x) when x = None -> (
+            match _find_substitution name (_get_temp_substitutions map) with
+            | Some (Some new_sub) -> update_sub new_sub
+            | _ -> sub
+            )
+         | Sym (n, ts) -> Sym(n, List.map update_sub ts)
+         | _ -> sub
+      in
+      List.map (fun (name, sub) -> match sub with
+                                 | None -> (name,sub)
+                                 | Some current_sub -> (name, Some (update_sub current_sub))) subs
+
    let rec apply_substitutions goals map =
       let update_goal g =
          match g with
@@ -146,7 +166,7 @@ module State = struct
    let set_goals goals map =  
       let new_state = make_state (_get_program map)
                                  []                        
-                                 (_get_variables map)
+                                 (_update_variables map)
                                  (fst (get_clauses () map))
                                  goals  
       in

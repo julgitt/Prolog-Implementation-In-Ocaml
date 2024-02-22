@@ -2,11 +2,20 @@ open Ast
 open BacktrackStateMonad.BSM
 module P = Printer
 
-let rec _contains_var x t =
+(*let rec _contains_var x t =
+   let rec check_lists ts =
+      match ts with
+      | [] -> return false
+      | head :: rest ->
+         let* contains = _contains_var x head in
+         if contains then return true
+         else check_lists rest
+   in
    match P.view t with
-   | Var (_, y) -> x = y
-   | Sym (_, ts) -> List.exists (_contains_var x) ts
-   | Num _ -> false
+   | Var (name, _) -> let* c = contains_substitution name in
+      return (not c)
+   | Sym (_, ts) -> check_lists ts
+   | Num _ -> return false*)
 
 
 let rec unify t1 t2 =
@@ -24,9 +33,10 @@ let rec unify t1 t2 =
    | Num x, Num y -> return (x = y)
    | Var(n1, x), Var(_, y) when x = y -> 
       push_substitution (n1, Some t2);
-   | Var (n, x), t | t, Var (n, x) ->
-      if _contains_var x t then return false
-      else push_substitution (n, Some t)
+   | Var (n, _), t | t, Var (n, _) ->
+      (*let* contains = _contains_var x t in
+      if contains then return false
+      else *)push_substitution (n, Some t)
    | Sym(h1, ts1), Sym(h2, ts2) when _compare_symbols h1 ts1 h2 ts2 ->
       unify_lists ts1 ts2
    | _ -> return false
